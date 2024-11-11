@@ -1,5 +1,6 @@
 #include "MyGameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Online/OnlineSessionNames.h"
 #include "Engine/World.h"
 
 UMyGameInstance::UMyGameInstance()
@@ -65,9 +66,7 @@ void UMyGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
     if (APlayerController* PController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
     {
         FString JoinAddress = "";
-        SessionInterface->GetResolvedConnectString(SessionName, JoinAddress);
-
-        if (!JoinAddress.IsEmpty())
+        if (SessionInterface->GetResolvedConnectString(SessionName, JoinAddress))
         {
             UE_LOG(LogTemp, Warning, TEXT("Joining session at address: %s"), *JoinAddress);
             PController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
@@ -124,11 +123,12 @@ void UMyGameInstance::JoinServer()
 {
     if (SessionInterface.IsValid())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Joining server..."));
+        UE_LOG(LogTemp, Warning, TEXT("Attempting to join a session..."));
 
         if (!SessionSearch.IsValid())
         {
-            UE_LOG(LogTemp, Warning, TEXT("No session search in progress."));
+            UE_LOG(LogTemp, Warning, TEXT("No session search in progress. Starting a new search..."));
+            SearchForSessions();
             return;
         }
 
@@ -138,7 +138,7 @@ void UMyGameInstance::JoinServer()
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("No session found to join."));
+            UE_LOG(LogTemp, Warning, TEXT("No sessions found to join."));
         }
     }
 }
@@ -148,9 +148,14 @@ void UMyGameInstance::SearchForSessions()
     if (SessionInterface.IsValid())
     {
         SessionSearch = MakeShared<FOnlineSessionSearch>();
+        SessionSearch->MaxSearchResults = 10;
 
-        SessionSearch->MaxSearchResults = 10;  // Limit search to 10 results
-        SessionSearch->QuerySettings.Set(FName(TEXT("PRESENCESEARCH")), true, EOnlineComparisonOp::Equals);
+        FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
+        if (SubsystemName == "Steam")
+        {
+            // Set the query setting for Steam
+            SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+        }
 
         UE_LOG(LogTemp, Warning, TEXT("Searching for sessions..."));
         SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
