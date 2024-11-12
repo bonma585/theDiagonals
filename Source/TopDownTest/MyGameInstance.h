@@ -1,9 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "Interfaces/OnlineSessionInterface.h"
+
 #include "Engine/GameInstance.h"
 #include "MyGameInstance.generated.h"
 
@@ -19,36 +21,39 @@ public:
     UMyGameInstance();
 
 protected:
-    // Session Interface and Settings
+    
     TSharedPtr<FOnlineSessionSearch> SessionSearch;
+    
     IOnlineSessionPtr SessionInterface;
 
-    // Function declarations
-    virtual void Init() override;
+    FName SESSION_NAME = FName("My Game");
 
-    // Callback for session creation
-    virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
+    FName testKey = FName("ServerKey");
+    FName testValue = FName("ServerName");
 
-    // Callback for session finding completion
-    virtual void OnFindSessionsComplete(bool Succeeded);
+    
+    void Init() override;
 
-    // Callback for session join completion
-    virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
-
-    // Host a server
     UFUNCTION(BlueprintCallable)
     void CreateServer();
-
-    // Join an existing server
     UFUNCTION(BlueprintCallable)
     void JoinServer();
 
-    // Search for available sessions
+    //Delegates
+    void OnCreateSessionComplete(FName SessionName, bool wasSuccessful);
+    void OnFindSessionComplete(bool Succeeded);
+    void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+    void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+
+   /*
+    $// Search for available sessions
     UFUNCTION(BlueprintCallable)
     void SearchForSessions();
 
 private:
-    const FName SESSION_NAME = FName("Diagonal Session");
+    
 
     FOnlineSessionSettings SessionSettings;
+    */
+
 };
