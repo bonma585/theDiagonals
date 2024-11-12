@@ -31,6 +31,8 @@ protected:
     FName testKey = FName("ServerKey");
     FName testValue = FName("ServerName");
 
+    bool bWantsToCreateSessionAfterDestroy = false;
+
     
     void Init() override;
 
@@ -45,15 +47,6 @@ protected:
     void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
     void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
-   /*
-    $// Search for available sessions
-    UFUNCTION(BlueprintCallable)
-    void SearchForSessions();
 
-private:
-    
-
-    FOnlineSessionSettings SessionSettings;
-    */
 
 };

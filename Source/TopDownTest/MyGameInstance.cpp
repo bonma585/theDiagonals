@@ -32,6 +32,12 @@ void UMyGameInstance::CreateServer()
 {
     UE_LOG(LogTemp, Warning, TEXT("Create Server"));
 
+    if (SessionInterface->GetNamedSession(SESSION_NAME)) {
+        bWantsToCreateSessionAfterDestroy = true;
+        SessionInterface->DestroySession(SESSION_NAME);
+        return;
+    }
+
     if (!SessionInterface.IsValid()) {
         UE_LOG(LogTemp, Error, TEXT("SessionInterface is not valid!"));
         return;
@@ -47,6 +53,7 @@ void UMyGameInstance::CreateServer()
 
     FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
     FOnlineSessionSettings SessionSettings;
+    SessionSettings.BuildUniqueId = 12345;
 
     if (SubsystemName == "NULL") {
         SessionSettings.bAllowJoinInProgress = true;
@@ -86,7 +93,8 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded
         UE_LOG(LogTemp, Warning, TEXT("Session created successfully. Session ID: %s"), *SessionId);
 
         // Attempt to travel to the map after creating the session
-        GetWorld()->ServerTravel("Game/TopDown/Maps/TopDownMap?listen");
+        GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");
+
     }
     else {
         UE_LOG(LogTemp, Error, TEXT("Failed to create session"));
@@ -139,7 +147,8 @@ void UMyGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 
 void UMyGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-    if (bWasSuccessful) {
+    if (bWasSuccessful && bWantsToCreateSessionAfterDestroy) {
+        bWantsToCreateSessionAfterDestroy = false;
         CreateServer();
     }
 }
