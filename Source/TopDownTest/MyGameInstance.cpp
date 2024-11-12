@@ -1,37 +1,55 @@
 #include "MyGameInstance.h"
-#include "Kismet/GameplayStatics.h"
-#include "Online/OnlineSessionNames.h"
-#include "Engine/World.h"
+#include "OnlineSubsystem.h"
+#include "OnlineSessionSettings.h"
 
 UMyGameInstance::UMyGameInstance()
 {
+    OnCreateSessionCompleteDelegate = FOnCreateSessionCompleteDelegate::CreateUObject(this, &UMyGameInstance::OnCreateSessionComplete);
+    OnDestroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(this, &UMyGameInstance::OnDestroySessionComplete);
+    OnFindSessionsCompleteDelegate = FOnFindSessionsCompleteDelegate::CreateUObject(this, &UMyGameInstance::OnFindSessionsComplete);
+    OnJoinSessionCompleteDelegate = FOnJoinSessionCompleteDelegate::CreateUObject(this, &UMyGameInstance::OnJoinSessionComplete);
 }
 
 void UMyGameInstance::Init()
 {
     Super::Init();
+}
 
-    if (IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get())
+void UMyGameInstance::CreateSession()
+{
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
     {
-        SessionInterface = Subsystem->GetSessionInterface();
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
         if (SessionInterface.IsValid())
         {
-            SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UMyGameInstance::OnCreateSessionComplete);
-            SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UMyGameInstance::OnFindSessionsComplete);
-            SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UMyGameInstance::OnJoinSessionComplete);
+            FOnlineSessionSettings SessionSettings;
+            SessionSettings.bIsLANMatch = true;
+            SessionSettings.NumPublicConnections = 2;
+            SessionSettings.bAllowJoinInProgress = true;
+            SessionSettings.bShouldAdvertise = true;
+
+            OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
+            SessionInterface->CreateSession(0, FName(TEXT("MySessionName")), SessionSettings);
         }
     }
 }
 
-void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
+void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-    if (Succeeded)
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
     {
-        UWorld* World = GetWorld();
-        FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
-        UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
-        if (!ensure(World != nullptr)) { return; };
-        World->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen", true, TRAVEL_Absolute);
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
+        {
+            SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegateHandle);
+        }
+    }
+
+    if (bWasSuccessful)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Session created successfully: %s"), *SessionName.ToString());
     }
     else
     {
@@ -39,125 +57,112 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
     }
 }
 
-void UMyGameInstance::OnFindSessionsComplete(bool Succeeded)
+void UMyGameInstance::FindSessions()
 {
-    if (Succeeded && SessionSearch.IsValid())
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
     {
-        TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
+        {
+            SessionSearch = MakeShareable(new FOnlineSessionSearch());
+            SessionSearch->bIsLanQuery = true;
+            SessionSearch->MaxSearchResults = 10;
 
-        if (SearchResults.Num() > 0)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Session found. Attempting to join..."));
-            SessionInterface->JoinSession(0, SESSION_NAME, SearchResults[0]);
+            OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
+            SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
         }
-        else
+    }
+}
+
+void UMyGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
+{
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
+    {
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
         {
-            UE_LOG(LogTemp, Warning, TEXT("No sessions found to join."));
+            SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegateHandle);
+        }
+    }
+
+    if (bWasSuccessful && SessionSearch.IsValid() && SessionSearch->SearchResults.Num() > 0)
+    {
+        for (const auto& SearchResult : SessionSearch->SearchResults)
+        {
+            JoinSession(SearchResult);
+            break;
         }
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to find sessions."));
+        UE_LOG(LogTemp, Warning, TEXT("No sessions found"));
+    }
+}
+
+void UMyGameInstance::JoinSession(const FOnlineSessionSearchResult& SearchResult)
+{
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
+    {
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
+        {
+            OnJoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
+            SessionInterface->JoinSession(0, FName(TEXT("MySessionName")), SearchResult);
+        }
     }
 }
 
 void UMyGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-    if (APlayerController* PController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
     {
-        FString JoinAddress = "";
-        if (SessionInterface->GetResolvedConnectString(SessionName, JoinAddress))
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
         {
-            UE_LOG(LogTemp, Warning, TEXT("Joining session at address: %s"), *JoinAddress);
-            PController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Failed to get join address."));
+            SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegateHandle);
+
+            FString ConnectString;
+            if (SessionInterface->GetResolvedConnectString(SessionName, ConnectString))
+            {
+                APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+                if (PlayerController)
+                {
+                    PlayerController->ClientTravel(ConnectString, TRAVEL_Absolute);
+                }
+            }
         }
     }
 }
 
-void UMyGameInstance::CreateServer()
+void UMyGameInstance::DestroySession()
 {
-    if (SessionInterface.IsValid())
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
     {
-        FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
-
-        // Check if a session already exists, and destroy it if necessary
-        FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(SESSION_NAME);
-        if (ExistingSession != nullptr)
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
         {
-            UE_LOG(LogTemp, Warning, TEXT("Destroying existing session..."));
-            SessionInterface->DestroySession(SESSION_NAME);
-        }
-
-        UE_LOG(LogTemp, Warning, TEXT("Creating server session..."));
-
-        // Set up session settings
-        FOnlineSessionSettings SessionSettings;
-        SessionSettings.bIsLANMatch = (SubsystemName == "NULL");
-        SessionSettings.bShouldAdvertise = true;
-        SessionSettings.NumPublicConnections = 5;
-
-        if (SubsystemName == "Steam")
-        {
-            SessionSettings.bUsesPresence = true;
-            SessionSettings.bUseLobbiesIfAvailable = true;
-        }
-
-        // Attempt to create the session
-        bool bSessionCreated = SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
-        if (bSessionCreated)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Session creation initiated."));
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Failed to initiate session creation."));
+            OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+            SessionInterface->DestroySession(FName(TEXT("MySessionName")));
         }
     }
 }
 
-void UMyGameInstance::JoinServer()
+void UMyGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-    if (SessionInterface.IsValid())
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Attempting to join a session..."));
-
-        if (!SessionSearch.IsValid())
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
         {
-            UE_LOG(LogTemp, Warning, TEXT("No session search in progress. Starting a new search..."));
-            SearchForSessions();
-            return;
-        }
-
-        if (SessionSearch->SearchResults.Num() > 0)
-        {
-            SessionInterface->JoinSession(0, SESSION_NAME, SessionSearch->SearchResults[0]);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("No sessions found to join."));
+            SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
         }
     }
-}
 
-void UMyGameInstance::SearchForSessions()
-{
-    if (SessionInterface.IsValid())
-    {
-        SessionSearch = MakeShared<FOnlineSessionSearch>();
-        SessionSearch->MaxSearchResults = 10;
-
-        FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
-        if (SubsystemName == "Steam")
-        {
-            // Set the query setting for Steam
-            SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-        }
-
-        UE_LOG(LogTemp, Warning, TEXT("Searching for sessions..."));
-        SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
-    }
+    UE_LOG(LogTemp, Log, TEXT("Session %s destroyed: %s"), *SessionName.ToString(), bWasSuccessful ? TEXT("success") : TEXT("failure"));
 }

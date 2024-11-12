@@ -1,15 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OnlineSubsystem.h"
-#include "OnlineSessionSettings.h"
-#include "Interfaces/OnlineSessionInterface.h"
 #include "Engine/GameInstance.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "MyGameInstance.generated.h"
 
-/**
- * GameInstance class for handling multiplayer sessions (host/join/find).
- */
 UCLASS()
 class TOPDOWNTEST_API UMyGameInstance : public UGameInstance
 {
@@ -18,35 +13,33 @@ class TOPDOWNTEST_API UMyGameInstance : public UGameInstance
 public:
     UMyGameInstance();
 
-protected:
-    // Session Interface and Settings
-    TSharedPtr<FOnlineSessionSearch> SessionSearch;
-    IOnlineSessionPtr SessionInterface;
-
-    // Function declarations
     virtual void Init() override;
 
-    // Callback for session creation
-    virtual void OnCreateSessionComplete(FName SessionName, bool Succeeded);
+    // Session management functions
+    void CreateSession();
+    void FindSessions();
+    void JoinSession(const FOnlineSessionSearchResult& SearchResult);
+    void DestroySession();
 
-    // Callback for session finding completion
-    virtual void OnFindSessionsComplete(bool Succeeded);
+protected:
+    // Delegates for session management
+    FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;
+    FOnDestroySessionCompleteDelegate OnDestroySessionCompleteDelegate;
+    FOnFindSessionsCompleteDelegate OnFindSessionsCompleteDelegate;
+    FOnJoinSessionCompleteDelegate OnJoinSessionCompleteDelegate;
 
-    // Callback for session join completion
-    virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+    // Delegate handles
+    FDelegateHandle OnCreateSessionCompleteDelegateHandle;
+    FDelegateHandle OnDestroySessionCompleteDelegateHandle;
+    FDelegateHandle OnFindSessionsCompleteDelegateHandle;
+    FDelegateHandle OnJoinSessionCompleteDelegateHandle;
 
-    // Host a server
-    UFUNCTION(BlueprintCallable)
-    void CreateServer();
-
-    // Join an existing server
-    UFUNCTION(BlueprintCallable)
-    void JoinServer();
-
-    // Search for available sessions
-    UFUNCTION(BlueprintCallable)
-    void SearchForSessions();
+    // Delegate callback functions
+    void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+    void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+    void OnFindSessionsComplete(bool bWasSuccessful);
+    void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
 private:
-    const FName SESSION_NAME = FName("Diagonal Session");
+    TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
