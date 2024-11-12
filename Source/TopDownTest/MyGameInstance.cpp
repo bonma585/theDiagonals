@@ -40,6 +40,7 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
         World->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen", true, TRAVEL_Absolute);
         FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
         UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
+
         
         if (!ensure(World != nullptr)) { return; }
     }
@@ -159,6 +160,8 @@ void UMyGameInstance::SearchForSessions()
         SessionSearch->MaxSearchResults = 10;
 
         FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
+        UE_LOG(LogTemp, Warning, TEXT("Using subsystem: %s"), *SubsystemName.ToString());
+
         if (SubsystemName == "Steam")
         {
             // Set the query setting for Steam
