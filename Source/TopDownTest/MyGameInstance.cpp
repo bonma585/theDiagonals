@@ -38,6 +38,10 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
         }
         UWorld* World = GetWorld();
         World->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen", true, TRAVEL_Absolute);
+        FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
+        UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
+        
+        if (!ensure(World != nullptr)) { return; }
     }
 }
 void UMyGameInstance::OnFindSessionsComplete(bool Succeeded)
@@ -79,6 +83,7 @@ void UMyGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
     }
 }
 
+
 void UMyGameInstance::CreateServer()
 {
     if (SessionInterface.IsValid())
@@ -96,12 +101,10 @@ void UMyGameInstance::CreateServer()
         UE_LOG(LogTemp, Warning, TEXT("Creating server session..."));
 
         // Set up session settings
-        // FOnlineSessionSettings SessionSettings;
         SessionSettings.bIsLANMatch = false;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = 5;
-        SessionSettings.bAllowJoinInProgress = true;
-
+        SessionSettings.bAllowJoinInProgress = true;  // Important for allowing late joiners
 
         if (SubsystemName == "Steam")
         {
@@ -121,6 +124,7 @@ void UMyGameInstance::CreateServer()
         }
     }
 }
+
 
 void UMyGameInstance::JoinServer()
 {
@@ -146,6 +150,7 @@ void UMyGameInstance::JoinServer()
     }
 }
 
+
 void UMyGameInstance::SearchForSessions()
 {
     if (SessionInterface.IsValid())
@@ -158,6 +163,7 @@ void UMyGameInstance::SearchForSessions()
         {
             // Set the query setting for Steam
             SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+
         }
 
         UE_LOG(LogTemp, Warning, TEXT("Searching for sessions..."));
