@@ -27,18 +27,19 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool Succeeded)
 {
     if (Succeeded)
     {
+        if (IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get())
+        {
+            FName SubsystemName = Subsystem->GetSubsystemName();
+            if (SubsystemName == "Steam")
+            {
+                // Explicitly set lobby joinability to true
+                SessionInterface->UpdateSession(SESSION_NAME, SessionSettings, true);
+            }
+        }
         UWorld* World = GetWorld();
-        FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
-        UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
-        if (!ensure(World != nullptr)) { return; };
         World->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen", true, TRAVEL_Absolute);
     }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to create session: %s"), *SessionName.ToString());
-    }
 }
-
 void UMyGameInstance::OnFindSessionsComplete(bool Succeeded)
 {
     if (Succeeded && SessionSearch.IsValid())
@@ -95,7 +96,7 @@ void UMyGameInstance::CreateServer()
         UE_LOG(LogTemp, Warning, TEXT("Creating server session..."));
 
         // Set up session settings
-        FOnlineSessionSettings SessionSettings;
+        // FOnlineSessionSettings SessionSettings;
         SessionSettings.bIsLANMatch = (SubsystemName == "NULL");
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = 5;

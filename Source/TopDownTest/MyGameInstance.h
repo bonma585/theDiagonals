@@ -49,4 +49,6 @@ protected:
 
 private:
     const FName SESSION_NAME = FName("Diagonal Session");
+
+    FOnlineSessionSettings SessionSettings;
 };
