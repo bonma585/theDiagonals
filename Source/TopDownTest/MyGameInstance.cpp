@@ -97,9 +97,11 @@ void UMyGameInstance::CreateServer()
 
         // Set up session settings
         // FOnlineSessionSettings SessionSettings;
-        SessionSettings.bIsLANMatch = (SubsystemName == "NULL");
+        SessionSettings.bIsLANMatch = false;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = 5;
+        SessionSettings.bAllowJoinInProgress = true;
+
 
         if (SubsystemName == "Steam")
         {
