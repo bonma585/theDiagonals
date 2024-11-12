@@ -5,6 +5,7 @@
 
 UMyGameInstance::UMyGameInstance()
 {
+    bWantsToCreateSessionAfterDestroy = false;
 }
 
 void UMyGameInstance::Init()
@@ -72,7 +73,6 @@ void UMyGameInstance::CreateServer()
     SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
 }
 
-
 void UMyGameInstance::JoinServer()
 {
     UE_LOG(LogTemp, Warning, TEXT("Join Server"));
@@ -81,10 +81,7 @@ void UMyGameInstance::JoinServer()
     SessionSearch->MaxSearchResults = 5;
     SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
     SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
-
 }
-
-
 
 void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
 {
@@ -93,45 +90,35 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded
         UE_LOG(LogTemp, Warning, TEXT("Session created successfully. Session ID: %s"), *SessionId);
 
         // Attempt to travel to the map after creating the session
-        GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");
-
+        GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");  // Change this to your specific map
     }
     else {
         UE_LOG(LogTemp, Error, TEXT("Failed to create session"));
     }
 }
 
-
-
-
-
 void UMyGameInstance::OnFindSessionComplete(bool bSucceeded)
 {
-
     if (!bSucceeded) {
         return;
     }
 
     TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
 
-
     if (SearchResults.Num()) {
         UE_LOG(LogTemp, Warning, TEXT("LISTING SESSIONS"));
         UE_LOG(LogTemp, Warning, TEXT("-----------"));
-
 
         for (FOnlineSessionSearchResult i : SearchResults) {
             UE_LOG(LogTemp, Warning, TEXT("Owning User Name: %s"), *FString(i.Session.OwningUserName));
         }
 
         SessionInterface->JoinSession(0, SESSION_NAME, SearchResults[0]);
-
     }
     else {
         UE_LOG(LogTemp, Warning, TEXT("No sessions found"));
     }
 }
-
 
 void UMyGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
@@ -152,4 +139,3 @@ void UMyGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucce
         CreateServer();
     }
 }
-
