@@ -17,7 +17,6 @@ public class TopDownTest : ModuleRules
 															"Niagara",
 															"EnhancedInput",
 															"OnlineSubsystem",
-                                                            "OnlineSubsystemUtils",
                                                             "OnlineSubsystemNull",
 															"OnlineSubsystemSteam" });
     }
