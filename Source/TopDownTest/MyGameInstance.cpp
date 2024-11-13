@@ -57,7 +57,7 @@ void UMyGameInstance::CreateServer()
     // Create session settings
     FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
     FOnlineSessionSettings SessionSettings;
-    SessionSettings.BuildUniqueId = 12345;
+    //SessionSettings.BuildUniqueId = 12345;
 
     if (SubsystemName == "NULL") { // LAN Session
         SessionSettings.bAllowJoinInProgress = true;
@@ -89,6 +89,7 @@ void UMyGameInstance::JoinServer()
 
     // Start session search
     SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+    UE_LOG(LogTemp, Warning, TEXT("Attempting to find sessions");
 }
 
 void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
@@ -114,7 +115,7 @@ void UMyGameInstance::OnFindSessionComplete(bool bSucceeded)
     }
 
     TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
-
+    UE_LOG(LogTemp, Error, TEXT("TArray Populated"));
     if (SearchResults.Num()) {
         UE_LOG(LogTemp, Warning, TEXT("LISTING SESSIONS"));
         UE_LOG(LogTemp, Warning, TEXT("-----------"));
