@@ -69,7 +69,7 @@ void UMyGameInstance::CreateServer()
         SessionSettings.bIsLANMatch = false;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.bUsesPresence = true;
-        SessionSettings.bUseLobbiesIfAvailable = true;
+        SessionSettings.bUseLobbiesIfAvailable = false;
         SessionSettings.NumPublicConnections = 5;
     }
 
