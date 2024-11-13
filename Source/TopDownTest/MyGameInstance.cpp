@@ -84,7 +84,7 @@ void UMyGameInstance::JoinServer()
     // Setup search parameters
     SessionSearch = MakeShareable(new FOnlineSessionSearch());
     SessionSearch->bIsLanQuery = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL"); // LAN search if "NULL"
-    SessionSearch->MaxSearchResults = 5;
+    SessionSearch->MaxSearchResults = 9999;
     SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); // Ensure presence is enabled for search
 
     // Start session search
@@ -98,7 +98,8 @@ void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded
         UE_LOG(LogTemp, Warning, TEXT("Session created successfully. Session ID: %s"), *SessionId);
 
         // Attempt to travel to the map after creating the session
-        GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");  // Replace with your specific map
+        GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");  
+        UE_LOG(LogTemp, Error, TEXT("Succeeded to travel"));
     }
     else {
         UE_LOG(LogTemp, Error, TEXT("Failed to create session"));
