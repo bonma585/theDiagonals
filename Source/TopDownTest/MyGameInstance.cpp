@@ -84,7 +84,7 @@ void UMyGameInstance::JoinServer()
     // Setup search parameters
     SessionSearch = MakeShareable(new FOnlineSessionSearch());
     SessionSearch->bIsLanQuery = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL"); // LAN search if "NULL"
-    SessionSearch->MaxSearchResults = 9999;
+    SessionSearch->MaxSearchResults = 1000;
     SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); // Ensure presence is enabled for search
 
     // Start session search
