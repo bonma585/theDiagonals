@@ -72,6 +72,7 @@ void UMyGameInstance::CreateServer()
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.NumPublicConnections = 5;
         SessionSettings.bAllowJoinInProgress = true;
+        SessionSettings.Set(FName("Oniz"), FString("Oniz"), EOnlineDataAdvertisementType::ViaOnlineService);
     }
 
     // Create the session
@@ -90,7 +91,7 @@ void UMyGameInstance::JoinServer()
 
     // Start session search
     SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
-    UE_LOG(LogTemp, Warning, TEXT("Attempting to find sessions");
+    UE_LOG(LogTemp, Warning, TEXT("Attempting to find sessions"));
 }
 
 void UMyGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
@@ -121,9 +122,18 @@ void UMyGameInstance::OnFindSessionComplete(bool bSucceeded)
         UE_LOG(LogTemp, Warning, TEXT("LISTING SESSIONS"));
         UE_LOG(LogTemp, Warning, TEXT("-----------"));
 
+
+
         // Display search results
         for (const FOnlineSessionSearchResult& Result : SearchResults) {
             UE_LOG(LogTemp, Warning, TEXT("Owning User Name: %s"), *FString(Result.Session.OwningUserName));
+
+            FString Test;
+
+            if (Result.Session.SessionSettings.Get(FName("Oniz"), Test)) {
+                UE_LOG(LogTemp, Warning, TEXT("Oniz there"));
+            }
+
         }
 
         // Automatically join the first available session
