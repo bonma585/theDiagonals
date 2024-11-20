@@ -56,6 +56,8 @@ void UAnotherGameinstance::CreateServer()
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.NumPublicConnections = 5;
         SessionSettings.bAllowJoinInProgress = true;
+        SessionSettings.bAllowJoinViaPresence = true;
+
     }
 
     UE_LOG(LogTemp, Warning, TEXT("Logging Session Settings:"));
