@@ -47,6 +47,7 @@ void UAnotherGameinstance::CreateServer()
         SessionSettings.bIsLANMatch = true;
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.NumPublicConnections = 5;
+        SessionSettings.bAllowJoinInProgress = true;
     }
     else if (SubsystemName == "Steam") {
         SessionSettings.bIsLANMatch = false;
@@ -54,6 +55,7 @@ void UAnotherGameinstance::CreateServer()
         SessionSettings.bUsesPresence = true;
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.NumPublicConnections = 5;
+        SessionSettings.bAllowJoinInProgress = true;
     }
 
     // Create the session
