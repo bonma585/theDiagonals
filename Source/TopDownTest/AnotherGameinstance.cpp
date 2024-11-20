@@ -17,18 +17,12 @@ void UAnotherGameinstance::Init()
     if (IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get()) {
         SessionInterface = Subsystem->GetSessionInterface();
         if (SessionInterface.IsValid()) {
-            // Bind delegates to session events
             SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UAnotherGameinstance::OnCreateSessionComplete);
             SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UAnotherGameinstance::OnFindSessionComplete);
             SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UAnotherGameinstance::OnJoinSessionComplete);
             SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UAnotherGameinstance::OnDestroySessionComplete);
+
         }
-        else {
-            UE_LOG(LogTemp, Error, TEXT("Failed to initialize SessionInterface"));
-        }
-    }
-    else {
-        UE_LOG(LogTemp, Error, TEXT("OnlineSubsystem is null"));
     }
 }
 
@@ -63,6 +57,7 @@ void UAnotherGameinstance::CreateServer()
 
 
     SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
+
 }
 
 void UAnotherGameinstance::JoinServer()
@@ -73,6 +68,7 @@ void UAnotherGameinstance::JoinServer()
     SessionSearch->MaxSearchResults = 10000;
     SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
     SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+
 }
 
 void UAnotherGameinstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
@@ -83,7 +79,6 @@ void UAnotherGameinstance::OnCreateSessionComplete(FName SessionName, bool bSucc
 
         UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
         GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");
-        UE_LOG(LogTemp, Error, TEXT("Succeeded to travel"));
     }
     else {
         UE_LOG(LogTemp, Error, TEXT("Failed to create session"));
@@ -92,6 +87,7 @@ void UAnotherGameinstance::OnCreateSessionComplete(FName SessionName, bool bSucc
 
 void UAnotherGameinstance::OnFindSessionComplete(bool bSucceeded)
 {
+
     if (!bSucceeded) {
         return;
     }
@@ -134,3 +130,4 @@ void UAnotherGameinstance::OnDestroySessionComplete(FName SessionName, bool bWas
         CreateServer();
     }
 }
+
