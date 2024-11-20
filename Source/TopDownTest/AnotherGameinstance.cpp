@@ -78,6 +78,7 @@ void UAnotherGameinstance::OnCreateSessionComplete(FName SessionName, bool bSucc
         FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
 
         UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
+        UE_LOG(LogTemp, Warning, TEXT("Server Travel initiated to map: %s"), *GetWorld()->GetMapName());
         GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");
     }
     else {
@@ -118,6 +119,7 @@ void UAnotherGameinstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
         FString JoinAddress = "";
         SessionInterface->GetResolvedConnectString(SessionName, JoinAddress);
 
+        UE_LOG(LogTemp, Warning, TEXT("Join Address: %s"), *JoinAddress);
         if (JoinAddress != "") {
             PController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
         }
