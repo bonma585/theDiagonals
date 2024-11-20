@@ -8,7 +8,6 @@
 
 UAnotherGameinstance::UAnotherGameinstance()
 {
-    bWantsToCreateSessionAfterDestroy = false;
 }
 
 void UAnotherGameinstance::Init()
@@ -100,8 +99,10 @@ void UAnotherGameinstance::JoinServer()
 void UAnotherGameinstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
 {
     if (bSucceeded) {
+
         FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
-        UE_LOG(LogTemp, Warning, TEXT("Session created successfully. Session ID: %s"), *SessionId);
+
+        UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
 
         // Attempt to travel to the map after creating the session
         GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");
@@ -120,6 +121,7 @@ void UAnotherGameinstance::OnFindSessionComplete(bool bSucceeded)
     }
 
     TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+
     UE_LOG(LogTemp, Error, TEXT("TArray Populated"));
     if (SearchResults.Num()) {
         UE_LOG(LogTemp, Warning, TEXT("LISTING SESSIONS"));
@@ -128,19 +130,12 @@ void UAnotherGameinstance::OnFindSessionComplete(bool bSucceeded)
 
 
         // Display search results
-        for (const FOnlineSessionSearchResult& Result : SearchResults) {
-            UE_LOG(LogTemp, Warning, TEXT("Owning User Name: %s"), *FString(Result.Session.OwningUserName));
-
-            FString Test;
-
-            if (Result.Session.SessionSettings.Get(FName("Oniz"), Test)) {
-                UE_LOG(LogTemp, Warning, TEXT("Oniz there"));
-            }
-
+        for (FOnlineSessionSearchResult i : SearchResults) {
+            UE_LOG(LogTemp, Warning, TEXT("Owning User Name: %s"), *FString(i.Session.OwningUserName));
         }
 
-        // Automatically join the first available session
         SessionInterface->JoinSession(0, SESSION_NAME, SearchResults[0]);
+
     }
     else {
         UE_LOG(LogTemp, Warning, TEXT("No sessions found"));
@@ -165,8 +160,7 @@ void UAnotherGameinstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 
 void UAnotherGameinstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-    if (bWasSuccessful && bWantsToCreateSessionAfterDestroy) {
-        bWantsToCreateSessionAfterDestroy = false;
-        CreateServer(); // Recreate session after destroy
+    if (bWasSuccessful) {
+        CreateServer();
     }
 }
