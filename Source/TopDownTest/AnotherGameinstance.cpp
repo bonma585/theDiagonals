@@ -30,14 +30,14 @@ void UAnotherGameinstance::CreateServer()
 {
     UE_LOG(LogTemp, Warning, TEXT("Create Server"));
 
-    bool bExists = SessionInterface->GetNamedSession(SESSION_NAME) != nullptr;
+    /*bool bExists = SessionInterface->GetNamedSession(SESSION_NAME) != nullptr;
 
     if (bExists) {
         UE_LOG(LogTemp, Warning, TEXT("A Session already exists"));
         SessionInterface->DestroySession(SESSION_NAME);
         return;
     }
-
+    */
     FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
     FOnlineSessionSettings SessionSettings;
 
@@ -56,6 +56,15 @@ void UAnotherGameinstance::CreateServer()
         SessionSettings.bUseLobbiesIfAvailable = true;
         SessionSettings.NumPublicConnections = 5;
         SessionSettings.bAllowJoinInProgress = true;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("Logging Session Settings:"));
+    for (const auto& Setting : SessionSettings.Settings)
+    {
+        FString Key = Setting.Key.ToString();
+        FString Value;
+        Setting.Value.Data.GetValue(Value);
+        UE_LOG(LogTemp, Warning, TEXT("%s: %s"), *Key, *Value);
     }
 
     // Create the session
