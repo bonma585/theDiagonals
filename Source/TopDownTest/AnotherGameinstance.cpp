@@ -37,10 +37,11 @@ void UAnotherGameinstance::CreateServer()
         SessionInterface->DestroySession(SESSION_NAME);
         return;
     }
+
     FName SubsystemName = IOnlineSubsystem::Get()->GetSubsystemName();
     FOnlineSessionSettings SessionSettings;
 
-
+    // Ensure LAN and Steam settings match MyGameInstance exactly
     if (SubsystemName == "NULL") {
         SessionSettings.bAllowJoinInProgress = true;
         SessionSettings.bIsLANMatch = true;
@@ -55,61 +56,38 @@ void UAnotherGameinstance::CreateServer()
         SessionSettings.NumPublicConnections = 5;
     }
 
-
+    // Create the session
     SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
-
 }
 
 void UAnotherGameinstance::JoinServer()
 {
     UE_LOG(LogTemp, Warning, TEXT("Join Server"));
+
+    // Make sure the session search logic is identical to UMyGameInstance
     SessionSearch = MakeShareable(new FOnlineSessionSearch());
     SessionSearch->bIsLanQuery = (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL");
     SessionSearch->MaxSearchResults = 10000;
-    SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-    SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 
+    // Use the same query settings as MyGameInstance
+    SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+
+    // Initiate session search
+    SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
+
 
 void UAnotherGameinstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
 {
     if (bSucceeded) {
-
         FString SessionId = SessionInterface->GetNamedSession(SESSION_NAME)->GetSessionIdStr();
-
         UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SessionId);
-        UE_LOG(LogTemp, Warning, TEXT("Server Travel initiated to map: %s"), *GetWorld()->GetMapName());
+
+        // Ensure ServerTravel is called correctly for both cases
         GetWorld()->ServerTravel("/Game/TopDown/Maps/TopDownMap?listen");
     }
     else {
         UE_LOG(LogTemp, Error, TEXT("Failed to create session"));
-    }
-}
-
-void UAnotherGameinstance::OnFindSessionComplete(bool bSucceeded)
-{
-
-    if (!bSucceeded) {
-        return;
-    }
-
-    TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
-
-
-    if (SearchResults.Num()) {
-        UE_LOG(LogTemp, Warning, TEXT("LISTING SESSIONS"));
-        UE_LOG(LogTemp, Warning, TEXT("-----------"));
-
-
-        for (FOnlineSessionSearchResult i : SearchResults) {
-            UE_LOG(LogTemp, Warning, TEXT("Owning User Name: %s"), *FString(i.Session.OwningUserName));
-        }
-
-        SessionInterface->JoinSession(0, SESSION_NAME, SearchResults[0]);
-
-    }
-    else {
-        UE_LOG(LogTemp, Warning, TEXT("No sessions found"));
     }
 }
 
@@ -119,16 +97,39 @@ void UAnotherGameinstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
         FString JoinAddress = "";
         SessionInterface->GetResolvedConnectString(SessionName, JoinAddress);
 
-        UE_LOG(LogTemp, Warning, TEXT("Join Address: %s"), *JoinAddress);
         if (JoinAddress != "") {
             PController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
         }
     }
 }
 
+void UAnotherGameinstance::OnFindSessionComplete(bool bSucceeded)
+{
+    if (!bSucceeded) {
+        return;
+    }
+
+    TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+
+    if (SearchResults.Num()) {
+        UE_LOG(LogTemp, Warning, TEXT("LISTING SESSIONS"));
+        for (const FOnlineSessionSearchResult& SearchResult : SearchResults) {
+            UE_LOG(LogTemp, Warning, TEXT("Owning User Name: %s"), *FString(SearchResult.Session.OwningUserName));
+        }
+
+        // Join the first found session
+        SessionInterface->JoinSession(0, SESSION_NAME, SearchResults[0]);
+    }
+    else {
+        UE_LOG(LogTemp, Warning, TEXT("No sessions found"));
+    }
+}
+
+
 void UAnotherGameinstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
     if (bWasSuccessful) {
+        // After destroying the session, create a new one
         CreateServer();
     }
 }
