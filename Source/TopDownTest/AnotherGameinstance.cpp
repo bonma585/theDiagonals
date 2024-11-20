@@ -54,6 +54,7 @@ void UAnotherGameinstance::CreateServer()
         SessionSettings.bShouldAdvertise = true;
         SessionSettings.bUsesPresence = true;
         SessionSettings.bUseLobbiesIfAvailable = true;
+        SessionSettings.NumPrivateConnections = 5;
         SessionSettings.NumPublicConnections = 5;
         SessionSettings.bAllowJoinInProgress = true;
         SessionSettings.bAllowJoinViaPresence = true;
