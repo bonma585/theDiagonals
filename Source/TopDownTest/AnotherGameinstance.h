@@ -32,7 +32,6 @@ protected:
     FName testKey = FName("ServerKey");
     FName testValue = FName("ServerName");
 
-    bool bWantsToCreateSessionAfterDestroy = false;
 
 
     void Init() override;
